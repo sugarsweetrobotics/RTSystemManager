@@ -1,0 +1,54 @@
+# RTSystemManager CMake config file
+#
+# This file sets the following variables:
+# RTSystemManager_FOUND - Always TRUE.
+# RTSystemManager_INCLUDE_DIRS - Directories containing the RTSystemManager include files.
+# RTSystemManager_IDL_DIRS - Directories containing the RTSystemManager IDL files.
+# RTSystemManager_LIBRARIES - Libraries needed to use RTSystemManager.
+# RTSystemManager_DEFINITIONS - Compiler flags for RTSystemManager.
+# RTSystemManager_VERSION - The version of RTSystemManager found.
+# RTSystemManager_VERSION_MAJOR - The major version of RTSystemManager found.
+# RTSystemManager_VERSION_MINOR - The minor version of RTSystemManager found.
+# RTSystemManager_VERSION_REVISION - The revision version of RTSystemManager found.
+# RTSystemManager_VERSION_CANDIDATE - The candidate version of RTSystemManager found.
+
+message(STATUS "Found RTSystemManager-@PROJECT_VERSION@")
+set(RTSystemManager_FOUND TRUE)
+
+find_package(<dependency> REQUIRED)
+
+#set(RTSystemManager_INCLUDE_DIRS
+#    "@CMAKE_INSTALL_PREFIX@/include/@PROJECT_NAME_LOWER@-@PROJECT_VERSION_MAJOR@"
+#    ${<dependency>_INCLUDE_DIRS}
+#    )
+#
+#set(RTSystemManager_IDL_DIRS
+#    "@CMAKE_INSTALL_PREFIX@/include/@PROJECT_NAME_LOWER@-@PROJECT_VERSION_MAJOR@/idl")
+set(RTSystemManager_INCLUDE_DIRS
+    "@CMAKE_INSTALL_PREFIX@/include/@CPACK_PACKAGE_FILE_NAME@"
+    ${<dependency>_INCLUDE_DIRS}
+    )
+set(RTSystemManager_IDL_DIRS
+    "@CMAKE_INSTALL_PREFIX@/include/@CPACK_PACKAGE_FILE_NAME@/idl")
+
+
+if(WIN32)
+    set(RTSystemManager_LIBRARIES
+        "@CMAKE_INSTALL_PREFIX@/@LIB_INSTALL_DIR@/@CMAKE_SHARED_LIBRARY_PREFIX@@PROJECT_NAME_LOWER@@CMAKE_STATIC_LIBRARY_SUFFIX@"
+        ${<dependency>_LIBRARIES}
+        )
+else(WIN32)
+    set(RTSystemManager_LIBRARIES
+        "@CMAKE_INSTALL_PREFIX@/@LIB_INSTALL_DIR@/@CMAKE_SHARED_LIBRARY_PREFIX@@PROJECT_NAME_LOWER@@CMAKE_SHARED_LIBRARY_SUFFIX@"
+        ${<dependency>_LIBRARIES}
+        )
+endif(WIN32)
+
+set(RTSystemManager_DEFINITIONS ${<dependency>_DEFINITIONS})
+
+set(RTSystemManager_VERSION @PROJECT_VERSION@)
+set(RTSystemManager_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
+set(RTSystemManager_VERSION_MINOR @PROJECT_VERSION_MINOR@)
+set(RTSystemManager_VERSION_REVISION @PROJECT_VERSION_REVISION@)
+set(RTSystemManager_VERSION_CANDIDATE @PROJECT_VERSION_CANDIDATE@)
+

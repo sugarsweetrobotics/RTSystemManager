@@ -10,11 +10,14 @@ void MyModuleInit(RTC::Manager* manager)
 }
 
 int main(int argc, char** argv) {
-
-	RTSystemManager systemManager(argc, argv);
-
-	systemManager.pushTask(RTTask_ptr(new KeepConnectedTask(&systemManager, "localhost:2809/ConsoleIn0.rtc:out", "localhost:2809/ConsoleOut0.rtc:in")));
-	systemManager.main();
-
-	return 0;
+  RTSystemManager_ptr systemManager = RTSystemManager::init(argc, argv);
+  std::string out = "localhost:2809/ConsoleOut0.rtc";
+  std::string in = "localhost:2809/ConsoleIn0.rtc";
+  std::string outport = "localhost:2809/ConsoleIn0.rtc:out";
+  std::string inport = "localhost:2809/ConsoleOut0.rtc:in";
+  systemManager->pushTask(UNLESS(ISCONNECTED(inport, outport), CONNECT(inport, outport)));
+  systemManager->pushTask(IF(OR(ISRTCNOTFOUND(in), ISRTCZOMBIE(in)), DEACTIVATE(out), ACTIVATE(out)));
+  systemManager->pushTask(IF(OR(ISRTCNOTFOUND(out), ISRTCZOMBIE(out)), DEACTIVATE(in), ACTIVATE(in)));
+  systemManager->main();
+  return 0;
 }

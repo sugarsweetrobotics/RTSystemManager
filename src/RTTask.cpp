@@ -5,7 +5,28 @@
 #include "RTSystemManager.h"
 #include "RTCondition.h"
 
-void KeepConnectedTask::init(const std::string& path0, const std::string& path1) {
+If::If(RTCondition_ptr condition_, RTTask_ptr taskWhenTrue, RTTask_ptr taskWhenFalse):
+  condition(condition_), trueTask(taskWhenTrue), falseTask(taskWhenFalse)
+{
+}
+
+If::~If() 
+{
+}
+
+void If::operator()()
+{
+  if ((*condition)()) {
+    (*trueTask)();
+  } else {
+    if (falseTask != nullptr) {
+      (*falseTask)();
+    }
+  }
+}
+
+
+void Connect::init(const std::string& path0, const std::string& path1) {
 	std::vector<std::string> buf;
 	ssplit(buf, path0, ':');
 	if (buf.size() == 2) {
@@ -28,62 +49,57 @@ void KeepConnectedTask::init(const std::string& path0, const std::string& path1)
 	}
 }
 
-KeepConnectedTask::KeepConnectedTask(RTSystemManager* pManager, const std::string& path0, const std::string& path1) : m_pManager(pManager),
-m_ns0(m_pManager->naming(m_pManager->digestPathUri(path0)[0])),
-m_ns1(m_pManager->naming(m_pManager->digestPathUri(path1)[0])) {
-	init(path0, path1);
-	m_NamedValues = m_pManager->defaultDataPortConnectorNV;
+Connect::Connect(const std::string& path0, const std::string& path1) : 
+  m_ns0(RTSystemManager::instance()->naming(RTSystemManager::instance()->digestPathUri(path0)[0])),
+  m_ns1(RTSystemManager::instance()->naming(RTSystemManager::instance()->digestPathUri(path1)[0])) {
+  init(path0, path1);
+  m_NamedValues = RTSystemManager::instance()->defaultDataPortConnectorNV;
 }
 
-KeepConnectedTask::KeepConnectedTask(RTSystemManager* pManager, const std::string& path0, const std::string& path1, std::map<std::string, std::string> nv) : m_pManager(pManager),
-m_ns0(m_pManager->naming(m_pManager->digestPathUri(path0)[0])),
-m_ns1(m_pManager->naming(m_pManager->digestPathUri(path1)[0])) {
-	init(path0, path1);
-	m_NamedValues = nv;
+Connect::Connect(const std::string& path0, const std::string& path1, std::map<std::string, std::string> nv) : 
+  m_ns0(RTSystemManager::instance()->naming(RTSystemManager::instance()->digestPathUri(path0)[0])),
+  m_ns1(RTSystemManager::instance()->naming(RTSystemManager::instance()->digestPathUri(path1)[0])) {
+  init(path0, path1);
+  m_NamedValues = nv;
 }
 
-KeepConnectedTask::~KeepConnectedTask() {}
+Connect::~Connect() {}
 
-void KeepConnectedTask::operator()() {
-	RTConsumer rtc0 = m_pManager->resolve(m_ns0, m_path0);
-	RTConsumer rtc1 = m_pManager->resolve(m_ns1, m_path1);
-	PortConsumer port0 = m_pManager->getPort(rtc0, m_PortName0);
-	PortConsumer port1 = m_pManager->getPort(rtc1, m_PortName1);
-	if (!m_pManager->isConnectedBetweenDataPorts(port0, port1)) {
-		m_pManager->connectDataPorts(port0, port1, m_NamedValues);
+void Connect::operator()() {
+	RTConsumer rtc0 = RTSystemManager::instance()->resolve(m_ns0, m_path0);
+	RTConsumer rtc1 = RTSystemManager::instance()->resolve(m_ns1, m_path1);
+	PortConsumer port0 = RTSystemManager::instance()->getPort(rtc0, m_PortName0);
+	PortConsumer port1 = RTSystemManager::instance()->getPort(rtc1, m_PortName1);
+	if (!RTSystemManager::instance()->isConnectedBetweenDataPorts(port0, port1)) {
+		RTSystemManager::instance()->connectDataPorts(port0, port1, m_NamedValues);
 	}
 }
 
 
-ActivateWhenTask::ActivateWhenTask(RTSystemManager* pManager, RTCondition_ptr pCondition, const std::string& path) : m_pManager(pManager), m_pCondition(pCondition),
-m_ns(m_pManager->naming(m_pManager->digestPathUri(path)[0])), m_path(path) {
+Activate::Activate(const std::string& path) : 
+m_ns(RTSystemManager::instance()->naming(RTSystemManager::instance()->digestPathUri(path)[0])), m_path(path) {
 }
-void ActivateWhenTask::operator()() {
-	if ((*m_pCondition)()) {
-		RTConsumer rtc = m_pManager->resolve(m_ns, m_path);
-		m_pManager->activateRTC(rtc, m_pManager->getEC(rtc));
-	}
+void Activate::operator()() {
+  RTConsumer rtc = RTSystemManager::instance()->resolve(m_ns, m_path);
+  RTSystemManager::instance()->activateRTC(rtc, RTSystemManager::instance()->getEC(rtc));
 }
 
-DeactivateWhenTask::DeactivateWhenTask(RTSystemManager* pManager, RTCondition_ptr pCondition, const std::string& path) : m_pManager(pManager), m_pCondition(pCondition),
-m_ns(m_pManager->naming(m_pManager->digestPathUri(path)[0])), m_path(path) {
+Deactivate::Deactivate(const std::string& path) :
+m_ns(RTSystemManager::instance()->naming(RTSystemManager::instance()->digestPathUri(path)[0])), m_path(path) {
 }
 
-void DeactivateWhenTask::operator()() {
-	if ((*m_pCondition)()) {
-		RTConsumer rtc = m_pManager->resolve(m_ns, m_path);
-		m_pManager->deactivateRTC(rtc, m_pManager->getEC(rtc));
-	}
+void Deactivate::operator()() {
+		RTConsumer rtc = RTSystemManager::instance()->resolve(m_ns, m_path);
+		RTSystemManager::instance()->deactivateRTC(rtc, RTSystemManager::instance()->getEC(rtc));
 }
 
 
-ResetWhenTask::ResetWhenTask(RTSystemManager* pManager, RTCondition_ptr pCondition, const std::string& path) : m_pManager(pManager), m_pCondition(pCondition),
-m_ns(m_pManager->naming(m_pManager->digestPathUri(path)[0])), m_path(path) {
+Reset::Reset(const std::string& path) : 
+  m_ns(RTSystemManager::instance()->naming(RTSystemManager::instance()->digestPathUri(path)[0])), m_path(path) 
+{
 }
 
-void ResetWhenTask::operator()() {
-	if ((*m_pCondition)()) {
-		RTConsumer rtc = m_pManager->resolve(m_ns, m_path);
-		m_pManager->resetRTC(rtc, m_pManager->getEC(rtc));
-	}
+void Reset::operator()() {
+  RTConsumer rtc = RTSystemManager::instance()->resolve(m_ns, m_path);
+  RTSystemManager::instance()->resetRTC(rtc, RTSystemManager::instance()->getEC(rtc));
 }

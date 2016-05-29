@@ -26,10 +26,13 @@
 
 class RTTask;
 class RTCondition;
+class RTSystemManager;
 typedef std::shared_ptr<RTTask> RTTask_ptr;
 typedef std::shared_ptr<RTCondition> RTCondition_ptr;
+typedef std::shared_ptr<RTSystemManager> RTSystemManager_ptr;
 const static std::shared_ptr<RTTask> RTTask_nullptr(nullptr);
 const static std::shared_ptr<RTCondition> RTCondition_nullptr(nullptr);
+const static std::shared_ptr<RTSystemManager> RTSystemManager_nullptr(nullptr);
 
 void ssplit(std::vector<std::string>& buf, const std::string &str, char delim);
 std::string concat(const std::vector<std::string>& strs, const char delim, const int start = 0, const int end = -1);
@@ -51,10 +54,15 @@ public:
 	std::map<std::string, std::string> defaultDataPortConnectorNV;
 
 	std::vector<RTTask_ptr> taskList;
-public:
+  
+  static RTSystemManager_ptr init(int argc, char** argv);
+
+  static RTSystemManager_ptr instance();
+private:
 	RTSystemManager(int argc, char** argv);
 
 
+public:
 	~RTSystemManager();
 
 public:
@@ -104,6 +112,8 @@ public:
 		return getState(rtc, getEC(rtc, ec_id)) == RTC::ERROR_STATE;
 	}
 };
+
+
 
 #endif // RTSYSTEMMANAGER_H
 

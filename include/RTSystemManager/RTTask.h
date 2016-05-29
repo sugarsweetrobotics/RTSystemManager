@@ -22,10 +22,39 @@ public:
 	virtual void operator()() = 0;
 };
 
+class If : public RTTask {
+ protected:
+	RTTask_ptr trueTask;
+	RTTask_ptr falseTask;
+	RTCondition_ptr condition;
+public:
 
-class KeepConnectedTask : public RTTask {
+	If(RTCondition_ptr condition, RTTask_ptr taskWhenTrue, RTTask_ptr taskWhenFalse = RTTask_nullptr);
+
+	~If();
+
+	virtual void operator()();
+};
+
+inline RTTask_ptr IF(RTCondition_ptr condition, RTTask_ptr taskWhenTrue, RTTask_ptr taskWhenFalse = RTTask_nullptr) {
+  return RTTask_ptr(new If(condition, taskWhenTrue, taskWhenFalse));
+}
+
+class Unless : public If {
+ protected:
+ public:
+ Unless(RTCondition_ptr cond, RTTask_ptr trueTask, RTTask_ptr falseTask = RTTask_nullptr) : If(RTCondition_ptr(new Not(cond)), trueTask, falseTask) {}
+  virtual ~Unless() {}
+};
+
+inline RTTask_ptr UNLESS(RTCondition_ptr cond, RTTask_ptr ttask, RTTask_ptr ftask = RTTask_nullptr) {
+  return RTTask_ptr(new Unless(cond, ttask, ftask));
+}
+
+typedef std::shared_ptr<Unless> Unless_ptr;
+
+class Connect : public RTTask {
 private:
-	RTSystemManager* m_pManager;
 	std::string m_path0;
 	std::string m_path1;
 
@@ -40,53 +69,67 @@ public:
 
 	void init(const std::string& path0, const std::string& path1);
 
-	KeepConnectedTask(RTSystemManager* pManager, const std::string& path0, const std::string& path1);
+	Connect(const std::string& path0, const std::string& path1);
 
-	KeepConnectedTask(RTSystemManager* pManager, const std::string& path0, const std::string& path1, std::map<std::string, std::string> nv);
+	Connect(const std::string& path0, const std::string& path1, std::map<std::string, std::string> nv);
 
-	virtual ~KeepConnectedTask();
+	virtual ~Connect();
 
 	virtual void operator()();
 };
 
-class ActivateWhenTask : public RTTask {
+inline RTTask_ptr CONNECT(const std::string& path0, const std::string& path1) {
+  return RTTask_ptr(new Connect(path0, path1));
+}
+
+inline RTTask_ptr CONNECT(const std::string& path0, const std::string& path1, std::map<std::string, std::string> nv) {
+  return RTTask_ptr(new Connect(path0, path1, nv));
+}
+
+class Activate : public RTTask {
 
 public:
-	RTSystemManager* m_pManager;
-	RTCondition_ptr m_pCondition;
 	RTC::CorbaNaming m_ns;
 	std::string m_path;
 public:
-	ActivateWhenTask(RTSystemManager* pManager, RTCondition_ptr pCondition, const std::string& path);
+	Activate(const std::string& path);
 
 public:
 	virtual void operator()();
 };
 
-class DeactivateWhenTask : public RTTask {
+inline RTTask_ptr ACTIVATE(const std::string& path) {
+  return RTTask_ptr(new Activate(path));
+}
+
+class Deactivate : public RTTask {
 
 private:
-	RTSystemManager* m_pManager;
-	RTCondition_ptr m_pCondition;
 	RTC::CorbaNaming m_ns;
 	std::string m_path;
 public:
-	DeactivateWhenTask(RTSystemManager* pManager, RTCondition_ptr pCondition, const std::string& path);
+	Deactivate(const std::string& path);
 
 public:
 	virtual void operator()();
 };
 
-class ResetWhenTask : public RTTask {
+inline RTTask_ptr DEACTIVATE(const std::string& path) {
+  return RTTask_ptr(new Deactivate(path));
+}
+
+class Reset : public RTTask {
 
 private:
-	RTSystemManager* m_pManager;
-	RTCondition_ptr m_pCondition;
 	RTC::CorbaNaming m_ns;
 	std::string m_path;
 public:
-	ResetWhenTask(RTSystemManager* pManager, RTCondition_ptr pCondition, const std::string& path);
+	Reset(const std::string& path);
 
 public:
 	virtual void operator()();
 };
+
+inline RTTask_ptr RESET(const std::string& path) {
+  return RTTask_ptr(new Reset(path));
+}

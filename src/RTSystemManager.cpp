@@ -17,6 +17,21 @@
 #include "RTTask.h"
 #include "RTCondition.h"
 
+static RTSystemManager_ptr _instance = RTSystemManager_nullptr;
+
+
+RTSystemManager_ptr RTSystemManager::init(int argc, char** argv) {
+  if (_instance == nullptr) {
+    _instance = std::shared_ptr<RTSystemManager>(new RTSystemManager(argc, argv));
+  }
+  return _instance;
+}
+
+RTSystemManager_ptr RTSystemManager::instance() {
+  return _instance;
+}
+
+
 RTSystemManager::RTSystemManager(int argc, char** argv) {
 	orb = CORBA::ORB_init(argc, argv);
 	defaultDataPortConnectorNV["dataport.interface_type"] = "corba_cdr";
@@ -246,12 +261,14 @@ void RTSystemManager::main(void) {
 
 	while (true) {
 
-		//this->naming("localhost:2809");
-		try {
 			std::vector<RTTask_ptr>::iterator i = taskList.begin();
 			for (; i != taskList.end(); ++i) {
+		//this->naming("localhost:2809");
+		try {
+
+
 				(**i)();
-			}
+
 
 		}
 		catch (RTC::CorbaNaming::NotFound& ex) {
@@ -268,7 +285,7 @@ void RTSystemManager::main(void) {
 		catch (CORBA::UNKNOWN& ex) {
 			std::cout << "Trasient" << std::endl;
 		}
-
+			}
 		//Sleep(1000);
 		coil::usleep(1000*1000);
 	}

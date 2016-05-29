@@ -70,7 +70,7 @@ RTC::CorbaNaming RTSystemManager::naming(const std::string& pathUri) {
 }
 
 
-RTConsumer RTSystemManager::resolve(RTC::CorbaNaming& naming, const std::string& pathUri) {
+RTConsumer RTSystemManager::resolve(RTC::CorbaNaming& naming, const std::string& pathUri) 		throw (RTC::CorbaNaming::NotFound, RTC::CorbaNaming::SystemException, RTC::CorbaNaming::InvalidName, RTC::CorbaNaming::CannotProceed) {
 	RTConsumer rtc;
 	std::vector<std::string> fullpath = digestPathUri(pathUri);
 	//RTC::Manager &m = RTC::Manager::instance();
@@ -83,7 +83,7 @@ RTConsumer RTSystemManager::resolve(RTC::CorbaNaming& naming, const std::string&
 }
 
 PortConsumer RTSystemManager::getPort(RTConsumer& rtc, const std::string& name) {
-	std::string comp_name = rtc->get_component_profile()->instance_name;
+  std::string comp_name = (const char*)rtc->get_component_profile()->instance_name;
 	std::string combined_name = comp_name + '.' + name;
 	std::string java_version_error_name = '.' + name;
 	PortConsumer port;
@@ -191,8 +191,8 @@ bool RTSystemManager::isConnectedBetweenDataPorts(PortConsumer& in, PortConsumer
 	if (out->_is_nil()) {
 		return false;
 	}
-	std::string outRTCName = out->get_port_profile()->owner->get_component_profile()->instance_name;
-	std::string outPortName = out->get_port_profile()->name;
+	std::string outRTCName = (const char*)out->get_port_profile()->owner->get_component_profile()->instance_name;
+	std::string outPortName = (const char*)out->get_port_profile()->name;
 	//RTC::ConnectorProfileList* clistIn = ;
 	for (int i = 0; i < in->get_connector_profiles()->length(); i++) {
 		RTC::ConnectorProfile* cpi = &(*in->get_connector_profiles())[i];
@@ -208,13 +208,13 @@ bool RTSystemManager::isConnectedBetweenDataPorts(PortConsumer& in, PortConsumer
 			}
 		}
 
-		std::string inst_name0 = cpi->ports[0]->get_port_profile()->owner->get_component_profile()->instance_name;
-		std::string inst_name1 = cpi->ports[1]->get_port_profile()->owner->get_component_profile()->instance_name;
+		std::string inst_name0 = (const char*)cpi->ports[0]->get_port_profile()->owner->get_component_profile()->instance_name;
+		std::string inst_name1 = (const char*)cpi->ports[1]->get_port_profile()->owner->get_component_profile()->instance_name;
 		if (inst_name0 != outRTCName && inst_name1 != outRTCName) {
 			continue;
 		}
-		std::string port_name0 = cpi->ports[0]->get_port_profile()->name;
-		std::string port_name1 = cpi->ports[1]->get_port_profile()->name;
+		std::string port_name0 = (const char*)cpi->ports[0]->get_port_profile()->name;
+		std::string port_name1 = (const char*)cpi->ports[1]->get_port_profile()->name;
 		if (port_name0 != outPortName && port_name1 != outPortName) {
 			continue;
 		}
@@ -269,7 +269,8 @@ void RTSystemManager::main(void) {
 			std::cout << "Trasient" << std::endl;
 		}
 
-		Sleep(1000);
+		//Sleep(1000);
+		coil::usleep(1000*1000);
 	}
 
 }

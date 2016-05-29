@@ -7,8 +7,10 @@
 #include <memory>
 
 #include <rtm/CorbaNaming.h>
-class RTSystemManager;
-class RTCondition;
+#include "RTSystemManager.h"
+
+
+#include "RTCondition.h"
 
 class RTTask {
 
@@ -20,7 +22,6 @@ public:
 	virtual void operator()() = 0;
 };
 
-typedef std::shared_ptr<RTTask> RTTask_ptr;
 
 class KeepConnectedTask : public RTTask {
 private:

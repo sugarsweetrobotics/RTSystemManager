@@ -14,7 +14,8 @@
 #include <stdlib.h>
 #include "RTSystemManager.h"
 
-
+#include "RTTask.h"
+#include "RTCondition.h"
 
 RTSystemManager::RTSystemManager(int argc, char** argv) {
 	orb = CORBA::ORB_init(argc, argv);
@@ -65,7 +66,6 @@ std::string concat(const std::vector<std::string>& strs, const char delim, const
 
 RTC::CorbaNaming RTSystemManager::naming(const std::string& pathUri) {
 	std::vector<std::string> fullpath = digestPathUri(pathUri);
-	//RTC::Manager &m = RTC::Manager::instance();
 	return RTC::CorbaNaming(orb, fullpath[0].c_str());
 }
 
@@ -253,6 +253,9 @@ void RTSystemManager::main(void) {
 				(**i)();
 			}
 
+		}
+		catch (RTC::CorbaNaming::NotFound& ex) {
+			std::cout << "NotFound" << std::endl;
 		}
 		catch (CORBA::BAD_INV_ORDER& ex) {
 			std::cout << "BadInvOrder" << std::endl;

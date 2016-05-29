@@ -10,6 +10,8 @@
 #ifndef RTSYSTEMMANAGER_H
 #define RTSYSTEMMANAGER_H
 
+#include <vector>
+#include <memory>
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -22,8 +24,12 @@
 #include <rtm/CorbaNaming.h>
 #include <rtm/CorbaConsumer.h>
 
-
-#include "RTTask.h"
+class RTTask;
+class RTCondition;
+typedef std::shared_ptr<RTTask> RTTask_ptr;
+typedef std::shared_ptr<RTCondition> RTCondition_ptr;
+const static std::shared_ptr<RTTask> RTTask_nullptr(nullptr);
+const static std::shared_ptr<RTCondition> RTCondition_nullptr(nullptr);
 
 void ssplit(std::vector<std::string>& buf, const std::string &str, char delim);
 std::string concat(const std::vector<std::string>& strs, const char delim, const int start = 0, const int end = -1);
@@ -69,7 +75,7 @@ public:
 
 	PortConsumer getPort(RTConsumer& rtc, const std::string& name);
 
-	bool connectDataPorts(RTC::CorbaConsumer<RTC::PortService>& in, RTC::CorbaConsumer<RTC::PortService>& out, std::string id = "connector0", std::string name = "connector0")  {
+	bool connectDataPorts(PortConsumer& in, PortConsumer& out, std::string id = "connector0", std::string name = "connector0")  {
 		return connectDataPorts(in, out, defaultDataPortConnectorNV, id, name);
 	}
 

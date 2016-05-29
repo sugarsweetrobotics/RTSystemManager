@@ -17,10 +17,6 @@ public:
 };
 
 
-typedef std::shared_ptr<RTCondition> RTCondition_ptr;
-
-
-
 class IsRTCInactive : public RTCondition {
 
 private:
@@ -29,16 +25,10 @@ private:
 	std::string m_path;
 	int m_ec_id;
 public:
-	IsRTCInactive(RTSystemManager* pManager, const std::string& path, const int ec_id = 0) : m_pManager(pManager),
-		m_ns(m_pManager->naming(m_pManager->digestPathUri(path)[0])), m_path(path) {
-		m_ec_id = 0;
-	}
+	IsRTCInactive(RTSystemManager* pManager, const std::string& path, const int ec_id = 0);
 
 public:
-	virtual bool operator()() {
-		RTConsumer rtc = m_pManager->resolve(m_ns, m_path);
-		return m_pManager->isInactiveRTC(rtc, m_ec_id);
-	}
+	virtual bool operator()();
 };
 
 class IsRTCActive : public RTCondition {
@@ -49,16 +39,10 @@ private:
 	std::string m_path;
 	int m_ec_id;
 public:
-	IsRTCActive(RTSystemManager* pManager, const std::string& path, const int ec_id = 0) : m_pManager(pManager),
-		m_ns(m_pManager->naming(m_pManager->digestPathUri(path)[0])), m_path(path) {
-		m_ec_id = 0;
-	}
+	IsRTCActive(RTSystemManager* pManager, const std::string& path, const int ec_id = 0);
 
 public:
-	virtual bool operator()() {
-		RTConsumer rtc = m_pManager->resolve(m_ns, m_path);
-		return m_pManager->isActiveRTC(rtc, m_ec_id);
-	}
+	virtual bool operator()();
 };
 
 class IsRTCError : public RTCondition {
@@ -69,14 +53,8 @@ private:
 	std::string m_path;
 	int m_ec_id;
 public:
-	IsRTCError(RTSystemManager* pManager, const std::string& path, const int ec_id = 0) : m_pManager(pManager),
-		m_ns(m_pManager->naming(m_pManager->digestPathUri(path)[0])), m_path(path) {
-		m_ec_id = 0;
-	}
+	IsRTCError(RTSystemManager* pManager, const std::string& path, const int ec_id = 0);
 
 public:
-	virtual bool operator()() {
-		RTConsumer rtc = m_pManager->resolve(m_ns, m_path);
-		return m_pManager->isErrorRTC(rtc, m_ec_id);
-	}
+	virtual bool operator()();
 };

@@ -21,14 +21,14 @@ static RTSystemManager_ptr _instance = RTSystemManager_nullptr;
 
 
 RTSystemManager_ptr RTSystemManager::init(int argc, char** argv) {
-  if (_instance == nullptr) {
-    _instance = std::shared_ptr<RTSystemManager>(new RTSystemManager(argc, argv));
-  }
-  return _instance;
+	if (_instance == nullptr) {
+		_instance = std::shared_ptr<RTSystemManager>(new RTSystemManager(argc, argv));
+	}
+	return _instance;
 }
 
 RTSystemManager_ptr RTSystemManager::instance() {
-  return _instance;
+	return _instance;
 }
 
 
@@ -36,7 +36,7 @@ RTSystemManager::RTSystemManager(int argc, char** argv) {
 	orb = CORBA::ORB_init(argc, argv);
 	defaultDataPortConnectorNV["dataport.interface_type"] = "corba_cdr";
 	defaultDataPortConnectorNV["dataport.dataflow_type"] = "push";
-	defaultDataPortConnectorNV["dataport.subscription_type"] = "new";
+	defaultDataPortConnectorNV["dataport.subscription_type"] = "flush";
 }
 
 RTSystemManager::~RTSystemManager() {
@@ -69,7 +69,7 @@ std::vector<std::string> RTSystemManager::digestPathUri(const std::string& pathU
 
 std::string concat(const std::vector<std::string>& strs, const char delim, const int start, const int end) {
 	std::string buf = strs[start];
-	for (int i = start+1; i < strs.size(); i++) {
+	for (int i = start + 1; i < strs.size(); i++) {
 		if (end > 0 && i >= end) {
 			break;
 		}
@@ -90,7 +90,6 @@ RTConsumer RTSystemManager::resolve(RTC::CorbaNaming& naming, const std::string&
 	std::vector<std::string> fullpath = digestPathUri(pathUri);
 	//RTC::Manager &m = RTC::Manager::instance();
 
-
 	std::string subPath = concat(fullpath, '/', 1);
 	rtc.setObject(naming.resolve(subPath.c_str()));
 
@@ -98,22 +97,29 @@ RTConsumer RTSystemManager::resolve(RTC::CorbaNaming& naming, const std::string&
 }
 
 PortConsumer RTSystemManager::getPort(RTConsumer& rtc, const std::string& name) {
-  std::string comp_name = (const char*)rtc->get_component_profile()->instance_name;
+	PortConsumer port;
+	RTC::ComponentProfile* cp = rtc->get_component_profile();
+	std::string comp_name = (const char*)cp->instance_name;
 	std::string combined_name = comp_name + '.' + name;
 	std::string java_version_error_name = '.' + name;
-	PortConsumer port;
 	RTC::PortServiceList* plist = rtc->get_ports();
+
+
 	for (int i = 0; i < plist->length(); i++) {
-		if (combined_name == (const char*)((*plist)[i]->get_port_profile()->name)) {
-			port.setObject((*plist)[i]);
+		RTC::PortProfile* pp = (*plist)[i]->get_port_profile();
+		if (combined_name == (const char*)(pp->name)) {
+			port.setObject((*plist)[i]->_duplicate((*plist)[i]));
 		}
-		else if (name == (const char*)((*plist)[i]->get_port_profile()->name)) {
-			port.setObject((*plist)[i]);
+		else if (name == (const char*)(pp->name)) {
+			port.setObject((*plist)[i]->_duplicate((*plist)[i]));
 		}
-		else if (java_version_error_name == (const char*)((*plist)[i]->get_port_profile()->name)) {
-			port.setObject((*plist)[i]);
+		else if (java_version_error_name == (const char*)(pp->name)) {
+			port.setObject((*plist)[i]->_duplicate((*plist)[i]));
 		}
+		delete pp;
 	}
+	delete cp;
+	delete plist;
 	return port;
 }
 
@@ -169,10 +175,10 @@ bool RTSystemManager::connectDataPorts(PortConsumer& in, PortConsumer& out, std:
 	prof.connector_id = CORBA::string_dup(id.c_str());
 	prof.name = CORBA::string_dup(name.c_str());
 	prof.ports.length(2);
-	prof.ports[0] = in._ptr();
-	prof.ports[1] = out._ptr();
-	
-
+	prof.ports[0] = in._ptr();// > _duplicate(in._ptr());
+	prof.ports[1] = out._ptr();// ->_duplicate(out._ptr());
+	in.setObject(in._ptr()->_duplicate(in._ptr()));
+	out.setObject(out._ptr()->_duplicate(out._ptr()));
 	std::map<std::string, std::string>::iterator i = nv.begin();
 	for (; i != nv.end(); ++i) {
 		std::string key = i->first;
@@ -198,7 +204,15 @@ bool RTSystemManager::connectDataPorts(PortConsumer& in, PortConsumer& out, std:
 }
 
 
+bool RTSystemManager::hasConnection(PortConsumer& port) {
+	RTC::PortProfile* pp = port->get_port_profile();
+	bool flag = (pp->connector_profiles.length() > 0);
+	delete pp;
+	return flag;
+}
+
 bool RTSystemManager::isConnectedBetweenDataPorts(PortConsumer& in, PortConsumer& out, std::string id, std::string name) {
+	bool retval = false;
 	if (in->_is_nil()) {
 		return false;
 	}
@@ -206,11 +220,17 @@ bool RTSystemManager::isConnectedBetweenDataPorts(PortConsumer& in, PortConsumer
 	if (out->_is_nil()) {
 		return false;
 	}
-	std::string outRTCName = (const char*)out->get_port_profile()->owner->get_component_profile()->instance_name;
-	std::string outPortName = (const char*)out->get_port_profile()->name;
+
+	RTC::PortProfile* outp = out->get_port_profile();
+	RTC::ComponentProfile* outOwnp = outp->owner->get_component_profile();
+
+	std::string outRTCName = (const char*)outOwnp->instance_name;
+	std::string outPortName = (const char*)outp->name;
+
 	//RTC::ConnectorProfileList* clistIn = ;
-	for (int i = 0; i < in->get_connector_profiles()->length(); i++) {
-		RTC::ConnectorProfile* cpi = &(*in->get_connector_profiles())[i];
+	RTC::ConnectorProfileList* inconplist = in->get_connector_profiles();
+	for (int i = 0; i < inconplist->length(); i++) {
+		RTC::ConnectorProfile* cpi = &(*inconplist)[i];
 		if (id.size() > 0) {
 			if (id != (const char*)cpi->connector_id) {
 				continue;
@@ -223,19 +243,34 @@ bool RTSystemManager::isConnectedBetweenDataPorts(PortConsumer& in, PortConsumer
 			}
 		}
 
-		std::string inst_name0 = (const char*)cpi->ports[0]->get_port_profile()->owner->get_component_profile()->instance_name;
-		std::string inst_name1 = (const char*)cpi->ports[1]->get_port_profile()->owner->get_component_profile()->instance_name;
+		RTC::PortProfile* p0 = cpi->ports[0]->get_port_profile();
+		RTC::PortProfile* p1 = cpi->ports[1]->get_port_profile();
+		RTC::ComponentProfile* pc0 = p0->owner->get_component_profile();
+		RTC::ComponentProfile* pc1 = p1->owner->get_component_profile();
+		std::string inst_name0 = (const char*)pc0->instance_name;
+		std::string inst_name1 = (const char*)pc1->instance_name;
+		std::string port_name0 = (const char*)p0->name;
+		std::string port_name1 = (const char*)p1->name;
+
+		delete p0;
+		delete p1;
+		delete pc0;
+		delete pc1;
 		if (inst_name0 != outRTCName && inst_name1 != outRTCName) {
 			continue;
 		}
-		std::string port_name0 = (const char*)cpi->ports[0]->get_port_profile()->name;
-		std::string port_name1 = (const char*)cpi->ports[1]->get_port_profile()->name;
 		if (port_name0 != outPortName && port_name1 != outPortName) {
 			continue;
 		}
-		return true;
+
+		retval = true;
+		break;
 	}
 
+
+	delete inconplist;
+	delete outOwnp;
+	delete outp;
 	return false;
 }
 
@@ -247,47 +282,31 @@ bool RTSystemManager::disconnectDataPorts(PortConsumer& in, PortConsumer& out, s
 
 
 void RTSystemManager::main(void) {
-
-	/*
-	RTC::CorbaNaming ns = this->naming("localhost:2809");
-	// それぞれのコンポーネントを取得
-	RTConsumer consoleIn0 = resolve(ns, "localhost:2809/ConsoleIn0.rtc");
-	RTConsumer consoleOut0 = resolve(ns, "localhost:2809/ConsoleOut0.rtc");
-
-	PortConsumer in = getPort(consoleOut0, "in");
-	PortConsumer out = getPort(consoleIn0, "out");
-	*/
-	//	activateRTC(consoleIn0, getEC(consoleIn0));
-
 	while (true) {
 
-			std::vector<RTTask_ptr>::iterator i = taskList.begin();
-			for (; i != taskList.end(); ++i) {
-		//this->naming("localhost:2809");
-		try {
-
-
+		std::vector<RTTask_ptr>::iterator i = taskList.begin();
+		for (; i != taskList.end(); ++i) {
+			try {
 				(**i)();
-
-
-		}
-		catch (RTC::CorbaNaming::NotFound& ex) {
-			std::cout << "NotFound" << std::endl;
-		}
-		catch (CORBA::BAD_INV_ORDER& ex) {
-			std::cout << "BadInvOrder" << std::endl;
-
-		}
-		catch (CORBA::TRANSIENT& ex) {
-			std::cout << "Trasient" << std::endl;
-		}
-
-		catch (CORBA::UNKNOWN& ex) {
-			std::cout << "Trasient" << std::endl;
-		}
+				coil::usleep(1000);
 			}
-		//Sleep(1000);
-		coil::usleep(1000*1000);
+			catch (RTC::CorbaNaming::NotFound& ex) {
+				std::cout << "NotFound" << std::endl;
+			}
+			catch (CORBA::BAD_INV_ORDER& ex) {
+				std::cout << "BadInvOrder" << std::endl;
+			}
+			catch (CORBA::TRANSIENT& ex) {
+				std::cout << "Trasient" << std::endl;
+			}
+			catch (CORBA::UNKNOWN& ex) {
+				std::cout << "Trasient" << std::endl;
+			}
+			catch (CORBA::COMM_FAILURE& ex) {
+				std::cout << "COM_FAILURE" << std::endl;
+			}
+		}
+		coil::usleep(1000 * 1000);
 	}
 
 }

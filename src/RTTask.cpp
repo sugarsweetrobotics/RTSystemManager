@@ -70,9 +70,15 @@ void Connect::operator()() {
 	RTConsumer rtc1 = RTSystemManager::instance()->resolve(m_ns1, m_path1);
 	PortConsumer port0 = RTSystemManager::instance()->getPort(rtc0, m_PortName0);
 	PortConsumer port1 = RTSystemManager::instance()->getPort(rtc1, m_PortName1);
-	if (!RTSystemManager::instance()->isConnectedBetweenDataPorts(port0, port1)) {
-		RTSystemManager::instance()->connectDataPorts(port0, port1, m_NamedValues);
-	}
+	//if (!RTSystemManager::instance()->isConnectedBetweenDataPorts(port0, port1)) {
+	RTSystemManager::instance()->connectDataPorts(port0, port1, m_NamedValues);
+	//}
+
+
+	CORBA::release(rtc0._ptr());
+	CORBA::release(rtc1._ptr());
+	CORBA::release(port0._ptr());
+	CORBA::release(port1._ptr());
 }
 
 

@@ -1,6 +1,10 @@
 set(comp_srcs RTSystemManager.cpp )
 set(standalone_srcs RTSystemManager.cpp RTTask.cpp RTCondition.cpp test.cpp)
 
+set(host_srcs RTSystemManager.cpp RTTask.cpp RTCondition.cpp host_task.cpp)
+
+set(client_srcs RTSystemManager.cpp RTTask.cpp RTCondition.cpp client_task.cpp)
+
 if (DEFINED OPENRTM_INCLUDE_DIRS)
   string(REGEX REPLACE "-I" ";"
     OPENRTM_INCLUDE_DIRS "${OPENRTM_INCLUDE_DIRS}")
@@ -49,6 +53,17 @@ link_directories(${OMNIORB_LIBRARY_DIRS})
 add_executable(${PROJECT_NAME} ${standalone_srcs}
   ${comp_srcs} ${comp_headers} ${ALL_IDL_SRCS})
 target_link_libraries(${PROJECT_NAME} ${OPENRTM_LIBRARIES})
+
+
+add_executable(${PROJECT_NAME}_host ${host_srcs}
+  ${comp_srcs} ${comp_headers} ${ALL_IDL_SRCS})
+target_link_libraries(${PROJECT_NAME}_host ${OPENRTM_LIBRARIES})
+
+
+add_executable(${PROJECT_NAME}_client ${client_srcs}
+  ${comp_srcs} ${comp_headers} ${ALL_IDL_SRCS})
+target_link_libraries(${PROJECT_NAME}_client ${OPENRTM_LIBRARIES})
+
 
 install(TARGETS ${PROJECT_NAME}
     EXPORT ${PROJECT_NAME}

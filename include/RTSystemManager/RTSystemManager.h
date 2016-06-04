@@ -38,6 +38,12 @@ void ssplit(std::vector<std::string>& buf, const std::string &str, char delim);
 std::string concat(const std::vector<std::string>& strs, const char delim, const int start = 0, const int end = -1);
 typedef RTC::CorbaConsumer<RTC::RTObject> RTConsumer;
 typedef RTC::CorbaConsumer<RTC::PortService> PortConsumer;
+
+//typedef RTC::CorbaConsumer<RTC::PortServiceList> PortListConsumer;
+
+typedef std::vector<std::string, PortConsumer> PortConsumerMap;
+
+
 /*!
  * @class RTSystemManager
  * @brief ModuleDescription
@@ -58,6 +64,10 @@ public:
   static RTSystemManager_ptr init(int argc, char** argv);
 
   static RTSystemManager_ptr instance();
+
+public:
+	//PortListConsumer getPorts(RTConsumer& rtc);
+
 private:
 	RTSystemManager(int argc, char** argv);
 
@@ -111,6 +121,8 @@ public:
 	bool isErrorRTC(RTConsumer& rtc, const int ec_id = 0) {
 		return getState(rtc, getEC(rtc, ec_id)) == RTC::ERROR_STATE;
 	}
+
+	bool hasConnection(PortConsumer& port);
 };
 
 

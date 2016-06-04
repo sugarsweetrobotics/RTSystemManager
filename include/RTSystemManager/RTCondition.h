@@ -16,6 +16,45 @@ public:
 	virtual bool operator()() = 0;
 };
 
+class And : public RTCondition {
+
+private:
+	RTCondition_ptr cond0;
+	RTCondition_ptr cond1;
+
+public:
+	And(RTCondition_ptr condition0, RTCondition_ptr condition1);
+	virtual ~And();
+
+public:
+	virtual bool operator()();
+};
+
+inline RTCondition_ptr AND(RTCondition_ptr cond0, RTCondition_ptr cond1) {
+	return RTCondition_ptr(new And(cond0, cond1));
+}
+
+class And4 : public RTCondition {
+
+private:
+	RTCondition_ptr cond0;
+	RTCondition_ptr cond1;
+	RTCondition_ptr cond2;
+	RTCondition_ptr cond3;
+
+public:
+	And4(RTCondition_ptr condition0, RTCondition_ptr condition1, RTCondition_ptr condition2, RTCondition_ptr condition3);
+	virtual ~And4();
+
+public:
+	virtual bool operator()();
+};
+
+inline RTCondition_ptr AND4(RTCondition_ptr cond0, RTCondition_ptr cond1, RTCondition_ptr cond2, RTCondition_ptr cond3) {
+	return RTCondition_ptr(new And4(cond0, cond1, cond2, cond3));
+}
+
+
 class Or : public RTCondition {
  private:
   RTCondition_ptr cond0;
@@ -74,7 +113,7 @@ private:
 	int m_ec_id;
 public:
 	IsRTCActive(const std::string& path, const int ec_id = 0);
-
+	virtual ~IsRTCActive() {}
 public:
 	virtual bool operator()();
 };
@@ -158,3 +197,25 @@ class IsConnected : public RTCondition {
 inline RTCondition_ptr ISCONNECTED(const std::string& path0, const std::string& path1) {
   return RTCondition_ptr(new IsConnected(path0, path1));
 }
+
+
+class HasConnection : public RTCondition {
+	std::string m_path0;
+
+	RTC::CorbaNaming m_ns0;
+
+	std::string m_PortName0;
+
+public:
+	HasConnection(const std::string& path0);
+	virtual ~HasConnection();
+
+	void init(const std::string& path0);
+public:
+	virtual bool operator()();
+};
+
+inline RTCondition_ptr HASCONNECTION(const std::string& path0) {
+	return RTCondition_ptr(new HasConnection(path0));
+}
+

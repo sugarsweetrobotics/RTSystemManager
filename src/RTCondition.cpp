@@ -1,6 +1,25 @@
 #include "RTCondition.h"
 #include "RTSystemManager.h"
 
+
+And::And(RTCondition_ptr condition0, RTCondition_ptr condition1) : cond0(condition0), cond1(condition1) {
+}
+
+And::~And() {}
+
+bool And::operator()() {
+	return ((*cond0)() && (*cond1)());
+}
+
+And4::And4(RTCondition_ptr condition0, RTCondition_ptr condition1, RTCondition_ptr condition2, RTCondition_ptr condition3) : cond0(condition0), cond1(condition1), cond2(condition2), cond3(condition3) {
+}
+
+And4::~And4() {}
+
+bool And4::operator()() {
+	return ((*cond0)() && (*cond1)() && (*cond2)() && (*cond3)());
+}
+
 Or::Or(RTCondition_ptr condition0, RTCondition_ptr condition1) : cond0(condition0), cond1(condition1) {
 }
 
@@ -26,7 +45,9 @@ IsRTCInactive::IsRTCInactive(const std::string& path, const int ec_id) :
 }
 bool IsRTCInactive::operator()() {
   RTConsumer rtc = RTSystemManager::instance()->resolve(m_ns, m_path);
-  return RTSystemManager::instance()->isInactiveRTC(rtc, m_ec_id);
+  bool flag = RTSystemManager::instance()->isInactiveRTC(rtc, m_ec_id);
+  CORBA::release(rtc._ptr());
+  return flag;
 }
 
 IsRTCActive::IsRTCActive(const std::string& path, const int ec_id):
@@ -35,7 +56,9 @@ IsRTCActive::IsRTCActive(const std::string& path, const int ec_id):
 }
 bool IsRTCActive::operator()() {
   RTConsumer rtc = RTSystemManager::instance()->resolve(m_ns, m_path);
-  return RTSystemManager::instance()->isActiveRTC(rtc, m_ec_id);
+  bool flag = RTSystemManager::instance()->isActiveRTC(rtc, m_ec_id);
+  CORBA::release(rtc._ptr());
+  return flag;
 }
 
 IsRTCZombie::IsRTCZombie(const std::string& path, const int ec_id):
@@ -59,6 +82,7 @@ IsRTCNotFound::IsRTCNotFound(const std::string& path, const int ec_id):
 bool IsRTCNotFound::operator()() {
   try {
     RTConsumer rtc = RTSystemManager::instance()->resolve(m_ns, m_path);
+	CORBA::release(rtc._ptr());
   } catch (RTC::CorbaNaming::NotFound& ex) {
     return true;
   }
@@ -112,8 +136,53 @@ void IsConnected::init(const std::string& path0, const std::string& path1) {
 bool IsConnected::operator()() {
   RTConsumer rtc0 = RTSystemManager::instance()->resolve(m_ns0, m_path0);
   RTConsumer rtc1 = RTSystemManager::instance()->resolve(m_ns1, m_path1);
-  PortConsumer port0 = RTSystemManager::instance()->getPort(rtc0, m_PortName0);
+  
+  PortConsumer port0 = RTSystemManager::instance()->getPort(rtc0,  m_PortName0);
   PortConsumer port1 = RTSystemManager::instance()->getPort(rtc1, m_PortName1);
-  return (RTSystemManager::instance()->isConnectedBetweenDataPorts(port0, port1));
+  bool flag = true;
+  flag = (RTSystemManager::instance()->isConnectedBetweenDataPorts(port0, port1));
+
+  CORBA::release(rtc0._ptr());
+  CORBA::release(rtc1._ptr());
+  CORBA::release(port0._ptr());
+  CORBA::release(port1._ptr());
+  return flag;
+}
+
+
+
+
+
+HasConnection::HasConnection(const std::string& path0) :
+m_ns0(RTSystemManager::instance()->naming(RTSystemManager::instance()->digestPathUri(path0)[0]))
+ {
+	init(path0);
+}
+
+HasConnection::~HasConnection() {}
+
+
+void HasConnection::init(const std::string& path0) {
+	std::vector<std::string> buf;
+	ssplit(buf, path0, ':');
+	if (buf.size() == 2) {
+		m_path0 = buf[0];
+		m_PortName0 = buf[1];
+	}
+	else if (buf.size() == 3) {
+		m_path0 = concat(buf, ':', 0, 2);
+		m_PortName0 = buf[2];
+	}
+}
+
+bool HasConnection::operator()() {
+	RTConsumer rtc0 = RTSystemManager::instance()->resolve(m_ns0, m_path0);
+	PortConsumer port0 = RTSystemManager::instance()->getPort(rtc0, m_PortName0);
+	bool flag = true;
+	flag = (RTSystemManager::instance()->hasConnection(port0));
+
+	CORBA::release(rtc0._ptr());
+	CORBA::release(port0._ptr());
+	return flag;
 }
 
